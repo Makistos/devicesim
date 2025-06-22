@@ -1,6 +1,6 @@
 # Test both checksum types
 0x15
-0x25  
+0x25
 <random 10 50>
 <checksum>
 <inverse_checksum>

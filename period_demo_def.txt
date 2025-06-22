@@ -1,0 +1,23 @@
+# Period Parameter Demonstration
+# Shows different periods for all waveform functions
+
+# Sine waves with different periods
+<sine 0 100 4>
+<sine 0 100 8>
+<sine 0 100 16>
+
+# Square waves with different periods
+<square 0 100 6>
+<square 0 100 12>
+
+# Triangle waves with different periods
+<triangle 0 100 5>
+<triangle 0 100 10>
+
+# Sawtooth waves with different periods
+<sawtooth 0 100 3>
+<sawtooth 0 100 9>
+
+# QRS with different overall periods
+<qrs 10 1 50 4 20 1 8>
+<qrs 10 1 50 4 20 1 16>

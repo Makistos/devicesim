@@ -22,12 +22,12 @@ A comprehensive Python toolkit for generating binary test data and creating adva
 
 | Function | Description | Parameters |
 |----------|-------------|------------|
-| `sine` | Sinusoidal wave | `<sine min_value max_value>` |
-| `square` | Square wave | `<square min_value max_value>` |
-| `triangle` | Triangle wave | `<triangle min_value max_value>` |
-| `sawtooth` | Sawtooth wave | `<sawtooth min_value max_value>` |
+| `sine` | Sinusoidal wave | `<sine min_value max_value [period]>` |
+| `square` | Square wave | `<square min_value max_value [period]>` |
+| `triangle` | Triangle wave | `<triangle min_value max_value [period]>` |
+| `sawtooth` | Sawtooth wave | `<sawtooth min_value max_value [period]>` |
 | `random` | Random values | `<random min_value max_value>` |
-| `qrs` | QRS ECG pattern | `<qrs q_val q_samples r_val r_period s_val s_samples>` |
+| `qrs` | QRS ECG pattern | `<qrs q_val q_samples r_val r_period s_val s_samples [overall_period]>` |
 | `checksum` | Sum of all other bytes | `<checksum>` |
 | `inverse_checksum` | Negative sum of other bytes | `<inverse_checksum>` |
 
@@ -85,11 +85,11 @@ Create a text file defining your data structure:
 100                            # Decimal constant
 -50                            # Negative decimal
 <random 0 255>                 # Random values 0-255
-<sine -100 100>                # Sine wave -100 to 100
-<square 10 200>                # Square wave 10 to 200
-<triangle 0 150>               # Triangle wave 0-150
-<sawtooth 20 80>               # Sawtooth 20-80
-<qrs -100 2 1000 16 -150 2>    # QRS complex pattern
+<sine -100 100 15>             # Sine wave -100 to 100 with period of 15 samples
+<square 10 200 8>              # Square wave 10 to 200 with period of 8 samples
+<triangle 0 150 20>            # Triangle wave 0-150 with period of 20 samples
+<sawtooth 20 80 12>            # Sawtooth 20-80 with period of 12 samples
+<qrs -100 2 1000 16 -150 2 24> # QRS complex with overall period of 24 samples
 ```
 
 ## 📁 Project Structure

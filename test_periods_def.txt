@@ -1,0 +1,11 @@
+# Test period parameters for different functions
+# Sine wave with period of 10 samples
+<sine -100 100 10>
+# Square wave with period of 8 samples  
+<square 0 255 8>
+# Triangle wave with period of 12 samples
+<triangle 0 150 12>
+# Sawtooth wave with period of 6 samples
+<sawtooth 20 80 6>
+# QRS with overall period of 24 samples
+<qrs -50 1 500 12 -75 1 24>

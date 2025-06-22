@@ -58,28 +58,33 @@ python3 simple_test_demo.py
 
 The plotting scripts can visualize all function types supported by the data generator:
 
-1. **Sine Wave** (`<sine min max>`)
+1. **Sine Wave** (`<sine min max [period]>`)
    - Smooth sinusoidal oscillation
+   - Optional period parameter controls wave frequency (default: 20)
    - Annotations: Peaks and valleys marked
 
-2. **Square Wave** (`<square min max>`)
+2. **Square Wave** (`<square min max [period]>`)
    - Sharp transitions between two levels
+   - Optional period parameter controls wave frequency (default: 20)
    - Annotations: Transition points marked
 
-3. **Triangle Wave** (`<triangle min max>`)
+3. **Triangle Wave** (`<triangle min max [period]>`)
    - Linear ramps up and down
+   - Optional period parameter controls wave frequency (default: 40)
    - Smooth triangular pattern
 
-4. **Sawtooth Wave** (`<sawtooth min max>`)
+4. **Sawtooth Wave** (`<sawtooth min max [period]>`)
    - Linear ramp that resets periodically
+   - Optional period parameter controls wave frequency (default: 30)
    - Creates a saw-tooth pattern
 
 5. **Random Values** (`<random min max>`)
    - Pseudo-random values within specified range
    - Statistical distribution visualization
 
-6. **QRS Complex** (`<qrs q_val q_samples r_val r_period s_val s_samples>`)
+6. **QRS Complex** (`<qrs q_val q_samples r_val r_period s_val s_samples [overall_period]>`)
    - Simulated ECG QRS complex pattern
+   - Optional overall_period parameter controls overall cycle period (default: r_period)
    - Annotations: R-peaks marked
 
 7. **Checksum** (`<checksum>`)
@@ -160,11 +165,11 @@ The scripts work with definition files that specify the data structure:
 100                     # Decimal constant
 -50                     # Negative decimal constant
 <random 0 255>          # Random function with range
-<sine -100 100>         # Sine wave with amplitude range
-<square 10 200>         # Square wave with value range
-<triangle 0 150>        # Triangle wave with range
-<sawtooth 20 80>        # Sawtooth wave with range
-<qrs -100 2 1000 16 -150 2>  # QRS complex pattern
+<sine -100 100 25>      # Sine wave with amplitude range and period
+<square 10 200 15>      # Square wave with value range and period
+<triangle 0 150 30>     # Triangle wave with range and period
+<sawtooth 20 80 20>     # Sawtooth wave with range and period
+<qrs -100 2 1000 16 -150 2 20>  # QRS complex with overall period
 ```
 
 ## Output Structure

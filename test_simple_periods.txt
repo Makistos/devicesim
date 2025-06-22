@@ -1,0 +1,9 @@
+# Test period parameters with simple, visible patterns
+# Sine wave with very short period to see oscillation
+<sine 0 100 8>
+# Square wave with period of 6 samples  
+<square 10 90 6>
+# Triangle wave with period of 10 samples
+<triangle 20 80 10>
+# Sawtooth wave with period of 8 samples
+<sawtooth 30 70 8>

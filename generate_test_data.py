@@ -125,10 +125,12 @@ class DataGenerator:
         elif func_name == 'sine':
             if len(numeric_params) >= 2:
                 min_val, max_val = numeric_params[0], numeric_params[1]
-                # Simple sine wave implementation
+                # Check for optional period parameter
+                period = numeric_params[2] if len(numeric_params) >= 3 else 20  # Default period
                 amplitude = (max_val - min_val) / 2
                 offset = (max_val + min_val) / 2
-                frequency = 0.1  # Default frequency
+                # Calculate frequency from period: frequency = 2π / period
+                frequency = (2 * math.pi) / period
                 value = int(offset + amplitude * math.sin(self.sample_index * frequency))
             else:
                 value = int(127 * math.sin(self.sample_index * 0.1))
@@ -137,16 +139,20 @@ class DataGenerator:
         elif func_name == 'square':
             if len(numeric_params) >= 2:
                 min_val, max_val = numeric_params[0], numeric_params[1]
-                period = 20  # Default period
-                value = max_val if (self.sample_index // period) % 2 == 0 else min_val
+                # Check for optional period parameter
+                period = int(numeric_params[2]) if len(numeric_params) >= 3 else 20  # Default period
+                # Use modulo with half-period to create proper square wave
+                half_period = period // 2
+                value = max_val if (self.sample_index // half_period) % 2 == 0 else min_val
             else:
-                value = 255 if (self.sample_index // 20) % 2 == 0 else 0
+                value = 255 if (self.sample_index // 10) % 2 == 0 else 0  # Half of default period
             return self.clamp_value(value)
 
         elif func_name == 'triangle':
             if len(numeric_params) >= 2:
                 min_val, max_val = numeric_params[0], numeric_params[1]
-                period = 40  # Default period
+                # Check for optional period parameter
+                period = int(numeric_params[2]) if len(numeric_params) >= 3 else 40  # Default period
                 position = (self.sample_index % period) / period
                 if position < 0.5:
                     value = int(min_val + (max_val - min_val) * (position * 2))
@@ -161,7 +167,8 @@ class DataGenerator:
         elif func_name == 'sawtooth':
             if len(numeric_params) >= 2:
                 min_val, max_val = numeric_params[0], numeric_params[1]
-                period = 30  # Default period
+                # Check for optional period parameter
+                period = int(numeric_params[2]) if len(numeric_params) >= 3 else 30  # Default period
                 position = (self.sample_index % period) / period
                 value = int(min_val + (max_val - min_val) * position)
             else:
@@ -169,12 +176,14 @@ class DataGenerator:
             return self.clamp_value(value)
 
         elif func_name == 'qrs':
-            # QRS Complex: <qrs q_value q_samples r_value r_period s_value s_samples>
+            # QRS Complex: <qrs q_value q_samples r_value r_period s_value s_samples [overall_period]>
             if len(numeric_params) >= 6:
                 q_val, q_samples, r_val, r_period, s_val, s_samples = numeric_params[:6]
+                # Check for optional overall period parameter (defaults to r_period)
+                overall_period = int(numeric_params[6]) if len(numeric_params) >= 7 else int(r_period)
 
-                # Check if we're in an R wave cycle
-                cycle_pos = self.sample_index % int(r_period)
+                # Check if we're in an R wave cycle using overall period
+                cycle_pos = self.sample_index % overall_period
 
                 if cycle_pos == 0:  # R wave peak
                     value = int(r_val)
@@ -284,18 +293,18 @@ class DataGenerator:
                 for i in range(count):
                     self.sample_index = i
                     sample_values = [0] * len(fields)  # Initialize sample array
-                    
+
                     # First pass: process all non-checksum fields
                     for field_idx, field in regular_fields:
                         value = self.process_field(field)
                         sample_values[field_idx] = value
-                    
+
                     # Second pass: process checksum fields with access to other field data
                     self.current_sample_data = [sample_values[idx] for idx, _ in regular_fields]
                     for field_idx, field in checksum_fields:
                         value = self.process_field(field)
                         sample_values[field_idx] = value
-                    
+
                     # Write all values in original field order
                     for value in sample_values:
                         # Pack value according to bit width
