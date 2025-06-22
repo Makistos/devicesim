@@ -42,14 +42,16 @@ Each binary file contains the fields in definition order:est data and creating a
 
 | Function | Description | Parameters |
 |----------|-------------|------------|
-| `sine` | Sinusoidal wave | `<sine min_value max_value [period]>` |
-| `square` | Square wave | `<square min_value max_value [period]>` |
-| `triangle` | Triangle wave | `<triangle min_value max_value [period]>` |
-| `sawtooth` | Sawtooth wave | `<sawtooth min_value max_value [period]>` |
+| `sine` | Sinusoidal wave | `<sine min_value max_value [period] [noise_level]>` |
+| `square` | Square wave | `<square min_value max_value [period] [noise_level]>` |
+| `triangle` | Triangle wave | `<triangle min_value max_value [period] [noise_level]>` |
+| `sawtooth` | Sawtooth wave | `<sawtooth min_value max_value [period] [noise_level]>` |
 | `random` | Random values | `<random min_value max_value>` |
-| `qrs` | QRS ECG pattern | `<qrs q_val q_samples r_val r_period s_val s_samples [overall_period]>` |
+| `qrs` | QRS ECG pattern | `<qrs q_val q_samples r_val r_period s_val s_samples [overall_period] [noise_level]>` |
 | `checksum` | Sum of all other bytes | `<checksum>` |
 | `inverse_checksum` | Negative sum of other bytes | `<inverse_checksum>` |
+
+**Noise Parameter**: Optional parameter (0-100) where 0=no noise, 100=completely random
 
 ## 📦 Installation
 
@@ -111,10 +113,15 @@ Create a text file defining your data structure:
 -50                            # Negative decimal
 <random 0 255>                 # Random values 0-255
 <sine -100 100 15>             # Sine wave -100 to 100 with period of 15 samples
+<sine -100 100 15 25>          # Same sine wave with 25% uniform noise
 <square 10 200 8>              # Square wave 10 to 200 with period of 8 samples
+<square 10 200 8 50>           # Same square wave with 50% noise
 <triangle 0 150 20>            # Triangle wave 0-150 with period of 20 samples
+<triangle 0 150 20 30>         # Triangle wave with 30% noise
 <sawtooth 20 80 12>            # Sawtooth 20-80 with period of 12 samples
+<sawtooth 20 80 12 40>         # Sawtooth with 40% noise
 <qrs -100 2 1000 16 -150 2 24> # QRS complex with overall period of 24 samples
+<qrs -100 2 1000 16 -150 2 24 20> # QRS complex with 20% noise
 ```
 
 ## � File Output Format

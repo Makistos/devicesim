@@ -1,0 +1,24 @@
+# Noise Parameter Test
+# Testing different noise levels for all waveform functions
+
+# Sine waves with different noise levels
+<sine 0 100 20 0>
+<sine 0 100 20 25>
+<sine 0 100 20 50>
+<sine 0 100 20 100>
+
+# Square waves with noise
+<square 0 100 16 0>
+<square 0 100 16 30>
+
+# Triangle waves with noise  
+<triangle 0 100 24 0>
+<triangle 0 100 24 40>
+
+# Sawtooth waves with noise
+<sawtooth 0 100 12 0>
+<sawtooth 0 100 12 60>
+
+# QRS with noise
+<qrs -50 1 200 16 -75 1 20 0>
+<qrs -50 1 200 16 -75 1 20 20>

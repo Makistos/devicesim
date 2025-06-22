@@ -131,13 +131,17 @@ class DataGenerator:
                 min_val, max_val = numeric_params[0], numeric_params[1]
                 # Check for optional period parameter
                 period = numeric_params[2] if len(numeric_params) >= 3 else 20  # Default period
+                # Check for optional noise parameter
+                noise_level = numeric_params[3] if len(numeric_params) >= 4 else 0  # Default no noise
                 amplitude = (max_val - min_val) / 2
                 offset = (max_val + min_val) / 2
                 # Calculate frequency from period: frequency = 2π / period
                 frequency = (2 * math.pi) / period
-                value = int(offset + amplitude * math.sin(self.sample_index * frequency))
+                clean_value = offset + amplitude * math.sin(self.sample_index * frequency)
+                value = self.apply_noise(clean_value, noise_level, min_val, max_val)
             else:
-                value = int(127 * math.sin(self.sample_index * 0.1))
+                clean_value = 127 * math.sin(self.sample_index * 0.1)
+                value = int(clean_value)
             return self.clamp_value(value)
 
         elif func_name == 'square':
@@ -145,11 +149,15 @@ class DataGenerator:
                 min_val, max_val = numeric_params[0], numeric_params[1]
                 # Check for optional period parameter
                 period = int(numeric_params[2]) if len(numeric_params) >= 3 else 20  # Default period
+                # Check for optional noise parameter
+                noise_level = numeric_params[3] if len(numeric_params) >= 4 else 0  # Default no noise
                 # Use modulo with half-period to create proper square wave
                 half_period = period // 2
-                value = max_val if (self.sample_index // half_period) % 2 == 0 else min_val
+                clean_value = max_val if (self.sample_index // half_period) % 2 == 0 else min_val
+                value = self.apply_noise(clean_value, noise_level, min_val, max_val)
             else:
-                value = 255 if (self.sample_index // 10) % 2 == 0 else 0  # Half of default period
+                clean_value = 255 if (self.sample_index // 10) % 2 == 0 else 0  # Half of default period
+                value = int(clean_value)
             return self.clamp_value(value)
 
         elif func_name == 'triangle':
@@ -157,15 +165,19 @@ class DataGenerator:
                 min_val, max_val = numeric_params[0], numeric_params[1]
                 # Check for optional period parameter
                 period = int(numeric_params[2]) if len(numeric_params) >= 3 else 40  # Default period
+                # Check for optional noise parameter
+                noise_level = numeric_params[3] if len(numeric_params) >= 4 else 0  # Default no noise
                 position = (self.sample_index % period) / period
                 if position < 0.5:
-                    value = int(min_val + (max_val - min_val) * (position * 2))
+                    clean_value = min_val + (max_val - min_val) * (position * 2)
                 else:
-                    value = int(max_val - (max_val - min_val) * ((position - 0.5) * 2))
+                    clean_value = max_val - (max_val - min_val) * ((position - 0.5) * 2)
+                value = self.apply_noise(clean_value, noise_level, min_val, max_val)
             else:
                 period = 40
                 position = (self.sample_index % period) / period
-                value = int(100 * (1 - 2 * abs(position - 0.5)))
+                clean_value = 100 * (1 - 2 * abs(position - 0.5))
+                value = int(clean_value)
             return self.clamp_value(value)
 
         elif func_name == 'sawtooth':
@@ -173,30 +185,41 @@ class DataGenerator:
                 min_val, max_val = numeric_params[0], numeric_params[1]
                 # Check for optional period parameter
                 period = int(numeric_params[2]) if len(numeric_params) >= 3 else 30  # Default period
+                # Check for optional noise parameter
+                noise_level = numeric_params[3] if len(numeric_params) >= 4 else 0  # Default no noise
                 position = (self.sample_index % period) / period
-                value = int(min_val + (max_val - min_val) * position)
+                clean_value = min_val + (max_val - min_val) * position
+                value = self.apply_noise(clean_value, noise_level, min_val, max_val)
             else:
-                value = self.sample_index % 100
+                clean_value = self.sample_index % 100
+                value = int(clean_value)
             return self.clamp_value(value)
 
         elif func_name == 'qrs':
-            # QRS Complex: <qrs q_value q_samples r_value r_period s_value s_samples [overall_period]>
+            # QRS Complex: <qrs q_value q_samples r_value r_period s_value s_samples [overall_period] [noise_level]>
             if len(numeric_params) >= 6:
                 q_val, q_samples, r_val, r_period, s_val, s_samples = numeric_params[:6]
                 # Check for optional overall period parameter (defaults to r_period)
                 overall_period = int(numeric_params[6]) if len(numeric_params) >= 7 else int(r_period)
+                # Check for optional noise parameter
+                noise_level = numeric_params[7] if len(numeric_params) >= 8 else 0  # Default no noise
 
                 # Check if we're in an R wave cycle using overall period
                 cycle_pos = self.sample_index % overall_period
 
                 if cycle_pos == 0:  # R wave peak
-                    value = int(r_val)
+                    clean_value = float(r_val)
                 elif cycle_pos <= int(q_samples):  # Q wave (before R)
-                    value = int(q_val)
+                    clean_value = float(q_val)
                 elif cycle_pos <= int(q_samples) + int(s_samples):  # S wave (after R)
-                    value = int(s_val)
+                    clean_value = float(s_val)
                 else:  # Baseline
-                    value = 0
+                    clean_value = 0.0
+                
+                # Determine min/max range for noise application
+                min_val = min(float(q_val), float(s_val), 0.0)
+                max_val = max(float(r_val), 0.0)
+                value = self.apply_noise(clean_value, noise_level, min_val, max_val)
             else:
                 # Default QRS pattern
                 cycle_pos = self.sample_index % 16
@@ -235,6 +258,37 @@ class DataGenerator:
         else:
             print(f"Warning: Unknown function '{func_name}', returning 0")
             return 0
+
+    def apply_noise(self, clean_value: float, noise_level: float, min_val: float, max_val: float) -> int:
+        """Apply uniform noise to a value.
+        
+        Args:
+            clean_value: The original clean signal value
+            noise_level: Noise level from 0 (no noise) to 100 (completely random)
+            min_val: Minimum value for the signal range
+            max_val: Maximum value for the signal range
+            
+        Returns:
+            The noisy value as an integer
+        """
+        if noise_level <= 0:
+            return int(clean_value)
+        
+        if noise_level >= 100:
+            # Completely random within the signal range
+            return int(random.uniform(min_val, max_val))
+        
+        # Mix clean signal with noise
+        noise_factor = noise_level / 100.0
+        signal_factor = 1.0 - noise_factor
+        
+        # Generate uniform noise within the signal range
+        noise_value = random.uniform(min_val, max_val)
+        
+        # Blend clean signal with noise
+        noisy_value = signal_factor * clean_value + noise_factor * noise_value
+        
+        return int(noisy_value)
 
     def clamp_value(self, value: int) -> int:
         """Clamp value to valid range for the specified bit width."""
@@ -325,7 +379,7 @@ class DataGenerator:
 
                 # Create individual file for this sample
                 sample_filename = f"{base_filename}.{i+1}.bin"
-                
+
                 with open(sample_filename, 'wb') as f:
                     # Write all values in original field order
                     for value in sample_values:
@@ -364,10 +418,10 @@ def main():
 Examples:
   python generate_test_data.py graph_def.txt testdata 100
     Creates: testdata.1.bin, testdata.2.bin, ..., testdata.100.bin
-  
+
   python generate_test_data.py graph_def.txt messages 50 --bits 16
     Creates: messages.1.bin, messages.2.bin, ..., messages.50.bin
-  
+
   python generate_test_data.py def.txt output/batch1/data 25
     Creates: output/batch1/data.1.bin, ..., output/batch1/data.25.bin
     (Automatically creates output/batch1/ directory)
@@ -378,6 +432,11 @@ Definition file format:
   -100              # Negative decimal
   <random 0 100>    # Function call
   <sine 0 255 20>   # Sine wave with period
+  <sine 0 255 20 25>  # Sine wave with 25% noise
+  <square 0 100 16 50>  # Square wave with 50% noise
+  <triangle 0 200 24 0>  # Triangle wave with no noise
+  <sawtooth 0 150 12 75>  # Sawtooth with 75% noise
+  <qrs -50 1 200 16 -75 1 20 30>  # QRS with 30% noise
   # comment         # Ignored
         """
     )
