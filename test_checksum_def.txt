@@ -1,0 +1,5 @@
+# Test checksum functionality
+0x10
+0x20
+0x30
+<inverse_checksum>

@@ -28,6 +28,8 @@ A comprehensive Python toolkit for generating binary test data and creating adva
 | `sawtooth` | Sawtooth wave | `<sawtooth min_value max_value>` |
 | `random` | Random values | `<random min_value max_value>` |
 | `qrs` | QRS ECG pattern | `<qrs q_val q_samples r_val r_period s_val s_samples>` |
+| `checksum` | Sum of all other bytes | `<checksum>` |
+| `inverse_checksum` | Negative sum of other bytes | `<inverse_checksum>` |
 
 ## 📦 Installation
 
@@ -54,7 +56,7 @@ cd devicesim
 # Run the complete demo
 python3 simple_test_demo.py
 
-# Generate custom data  
+# Generate custom data
 python3 generate_test_data.py your_def.txt output.bin 100
 
 # Create plots
@@ -80,7 +82,7 @@ Create a text file defining your data structure:
 ```
 # Comments start with #
 0x55                           # Hexadecimal constant
-100                            # Decimal constant  
+100                            # Decimal constant
 -50                            # Negative decimal
 <random 0 255>                 # Random values 0-255
 <sine -100 100>                # Sine wave -100 to 100
@@ -151,7 +153,7 @@ python3 plot_test_data.py my_functions.txt data.bin 200
 python3 generate_test_data.py test.txt data16.bin 100 --bits 16
 python3 plot_functions.py test.txt data16.bin 100 --bits 16
 
-# Generate 32-bit data  
+# Generate 32-bit data
 python3 generate_test_data.py test.txt data32.bin 100 --bits 32
 python3 plot_functions.py test.txt data32.bin 100 --bits 32
 ```
@@ -161,7 +163,7 @@ python3 plot_functions.py test.txt data32.bin 100 --bits 32
 The plotting tools create professional visualizations with:
 
 - **Individual Function Plots**: One plot per function type
-- **Overview Plots**: Combined visualization of all functions  
+- **Overview Plots**: Combined visualization of all functions
 - **Statistical Analysis**: Mean, standard deviation, min/max values
 - **Function Annotations**: Automatic marking of peaks, valleys, transitions
 - **R-peak Detection**: For QRS complex patterns

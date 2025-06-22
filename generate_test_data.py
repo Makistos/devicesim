@@ -37,6 +37,7 @@ class DataGenerator:
         # Function state for stateful functions
         self.function_state = {}
         self.sample_index = 0
+        self.current_sample_data = []  # For checksum calculations
 
     def parse_definition_file(self, filepath: str) -> List[str]:
         """Parse definition file and return list of field definitions."""
@@ -196,9 +197,25 @@ class DataGenerator:
                     value = 0     # Baseline
             return self.clamp_value(value)
 
-        elif func_name in ['crc', 'checksum', 'inverse_checksum']:
-            # Placeholder for checksum functions
-            # In a real implementation, this would calculate based on previous data
+        elif func_name == 'checksum':
+            # Simple checksum: sum of all other bytes in current sample
+            if hasattr(self, 'current_sample_data') and self.current_sample_data:
+                checksum = sum(self.current_sample_data) & self.max_unsigned
+                return self.clamp_value(checksum)
+            else:
+                return 0
+
+        elif func_name == 'inverse_checksum':
+            # Inverse checksum: negative of sum of all other bytes in current sample
+            if hasattr(self, 'current_sample_data') and self.current_sample_data:
+                checksum = sum(self.current_sample_data)
+                inverse_checksum = -checksum
+                return self.clamp_value(inverse_checksum)
+            else:
+                return 0
+
+        elif func_name == 'crc':
+            # Placeholder for CRC implementation
             print(f"Warning: Function '{func_name}' not yet implemented, returning 0")
             return 0
 
@@ -248,15 +265,39 @@ class DataGenerator:
         print(f"Generating {count} data points with {self.bits}-bit values...")
         print(f"Fields found: {len(fields)}")
 
+        # Identify checksum fields that need special handling
+        checksum_fields = []
+        regular_fields = []
+        for i, field in enumerate(fields):
+            if field.startswith('<') and field.endswith('>'):
+                func_call = field.strip('<>')
+                func_name = func_call.split()[0] if func_call.split() else ''
+                if func_name in ['checksum', 'inverse_checksum']:
+                    checksum_fields.append((i, field))
+                else:
+                    regular_fields.append((i, field))
+            else:
+                regular_fields.append((i, field))
+
         try:
             with open(output_file, 'wb') as f:
                 for i in range(count):
                     self.sample_index = i
-
-                    # Process each field in the definition
-                    for field in fields:
+                    sample_values = [0] * len(fields)  # Initialize sample array
+                    
+                    # First pass: process all non-checksum fields
+                    for field_idx, field in regular_fields:
                         value = self.process_field(field)
-
+                        sample_values[field_idx] = value
+                    
+                    # Second pass: process checksum fields with access to other field data
+                    self.current_sample_data = [sample_values[idx] for idx, _ in regular_fields]
+                    for field_idx, field in checksum_fields:
+                        value = self.process_field(field)
+                        sample_values[field_idx] = value
+                    
+                    # Write all values in original field order
+                    for value in sample_values:
                         # Pack value according to bit width
                         if value < 0:
                             # Use signed format for negative values

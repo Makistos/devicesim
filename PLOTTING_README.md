@@ -82,6 +82,15 @@ The plotting scripts can visualize all function types supported by the data gene
    - Simulated ECG QRS complex pattern
    - Annotations: R-peaks marked
 
+7. **Checksum** (`<checksum>`)
+   - Sum of all other bytes in the current sample
+   - Useful for data integrity validation
+
+8. **Inverse Checksum** (`<inverse_checksum>`)
+   - Negative of the sum of all other bytes in current sample
+   - Calculated as -(sum of all other fields)
+   - Commonly used for error detection protocols
+
 ## Generated Files
 
 ### Plot Types
