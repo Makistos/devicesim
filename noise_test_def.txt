@@ -11,7 +11,7 @@
 <square 0 100 16 0>
 <square 0 100 16 30>
 
-# Triangle waves with noise  
+# Triangle waves with noise
 <triangle 0 100 24 0>
 <triangle 0 100 24 40>
 

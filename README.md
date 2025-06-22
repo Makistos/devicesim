@@ -98,8 +98,135 @@ python3 plot_test_data.py your_def.txt output.bin 100
 # Start the device simulator
 python3 simple_devicesim.py config_example.yaml
 
-# In another terminal, test with client
-python3 test_client.py
+# In another terminal, test with debug client
+python3 debug_client.py
+```
+
+## 🔧 Device Simulator
+
+The device simulator creates a UNIX socket server that simulates device communication patterns. It reads binary data files and sends them according to configurable timing and trigger patterns.
+
+### Key Features
+- **UNIX Socket Communication**: Uses `/tmp/test_socket.sock` for inter-process communication
+- **YAML Configuration**: Flexible rule-based message sending
+- **File Pattern Matching**: Supports regex patterns for dynamic file selection
+- **Timing Control**: Configurable delays between messages
+- **Repeat Patterns**: Control message repetition (finite or infinite)
+- **Trigger-Based**: Can wait for client triggers or start immediately
+
+### Simulator Workflow
+1. **Startup**: Reads YAML configuration and creates socket
+2. **Client Connection**: Waits for client to connect
+3. **Trigger Handling**: Optionally waits for trigger messages
+4. **Message Dispatch**: Sends binary files according to configuration rules
+5. **File Rotation**: Cycles through matching files for continuous operation
+
+## 📝 YAML Configuration Format
+
+The simulator uses YAML files to define communication behavior:
+
+### Basic Structure
+```yaml
+WaitToStart: Yes/No          # Wait for trigger message before starting
+ReceiveCount: 5              # Number of messages to handle (0 = unlimited)
+
+Replies:                     # List of reply sequences
+  - reply_number: 1          # Reply sequence identifier
+    Messages:                # Messages to send for this reply
+      - file name: pattern   # File pattern (regex supported)
+        delay: 0             # Delay in milliseconds
+        repeat: 1            # Repeat count (0 = infinite)
+```
+
+### Configuration Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `WaitToStart` | Boolean | `Yes`: Wait for trigger message<br>`No`: Start immediately |
+| `ReceiveCount` | Integer | Number of incoming messages to process<br>`0` = unlimited |
+| `reply_number` | Integer | Sequential identifier for reply stages |
+| `file name` | String | File pattern (supports regex)<br>Example: `start\.1\.bin` or `graph\..*\.bin` |
+| `delay` | Integer | Delay in milliseconds before sending |
+| `repeat` | Integer | Number of times to repeat<br>`0` = infinite, `1` = once |
+
+### Example Configurations
+
+#### Triggered Response Mode (`config_example.yaml`)
+```yaml
+WaitToStart: Yes
+ReceiveCount: 5
+
+Replies:
+  - reply_number: 1
+    Messages:
+      - file name: start\.1\.bin    # Send specific startup file
+        delay: 0
+        repeat: 1
+  - reply_number: 2
+    Messages:
+      - file name: start\.2\.bin    # Send next startup file
+        delay: 0  
+        repeat: 1
+  - reply_number: 6
+    Messages:
+      - file name: graph\..*\.bin   # Send all graph files
+        delay: 16                   # 16ms between files
+        repeat: 0                   # Infinite repeat
+      - file name: numeric\..*\.bin # Send all numeric files
+        delay: 50                   # 50ms between files  
+        repeat: 0                   # Infinite repeat
+```
+
+#### Immediate Start Mode (`config_immediate.yaml`)
+```yaml
+WaitToStart: No
+ReceiveCount: 1
+
+Replies:
+  - reply_number: 1
+    Messages:
+      - file name: start\.1\.bin
+        delay: 0
+        repeat: 1
+  - reply_number: 2  
+    Messages:
+      - file name: graph\..*\.bin
+        delay: 16
+        repeat: 0
+```
+
+### File Pattern Matching
+
+The simulator supports regex patterns for flexible file selection:
+
+| Pattern | Matches | Example |
+|---------|---------|---------|
+| `start\.1\.bin` | Exact file | `start.1.bin` |
+| `graph\..*\.bin` | All graph files | `graph.1.bin`, `graph.2.bin`, etc. |
+| `data_.*\.bin` | Pattern prefix | `data_test.bin`, `data_demo.bin` |
+| `.*\.bin` | All binary files | Any `.bin` file |
+
+### Communication Protocol
+
+1. **Client Connection**: Client connects to `/tmp/test_socket.sock`
+2. **Trigger Message** (if `WaitToStart: Yes`): Client sends any message to trigger start
+3. **Response Sequence**: Server sends files according to `Replies` configuration
+4. **File Rotation**: For `repeat: 0`, cycles through matching files infinitely
+5. **Timing**: Respects `delay` parameters between transmissions
+
+### Usage Examples
+
+```bash
+# Create test data files
+python3 generate_test_data.py my_def.txt start 5
+python3 generate_test_data.py graph_def.txt graph 10  
+python3 generate_test_data.py numeric_def.txt numeric 8
+
+# Start simulator with triggered mode
+python3 simple_devicesim.py config_example.yaml
+
+# Test with debug client (sends trigger and receives data)
+python3 debug_client.py
 ```
 
 ## 📋 Definition File Format
@@ -152,6 +279,7 @@ Each binary file contains the fields in definition order:
 | `plot_functions.py` | Create individual function visualizations |
 | `plot_test_data.py` | Statistical analysis and comprehensive plotting |
 | `simple_test_demo.py` | Complete demonstration workflow |
+| `combine_files.py` | Utility to combine numbered files for plotting |
 | `PLOTTING_README.md` | Detailed plotting documentation |
 | `requirements.txt` | Python dependencies |
 
@@ -159,17 +287,10 @@ Each binary file contains the fields in definition order:
 
 | File | Description |
 |------|-------------|
-| `simple_devicesim.py` | Main server script for socket communication |
-| `config_example.yaml` | Main configuration file |
-| `config_immediate.yaml` | Alternative immediate-start configuration |
-
-### Test Clients
-
-| File | Description |
-|------|-------------|
-| `test_complete.py` | Comprehensive test client |
-| `test_immediate.py` | Test client for immediate start mode |
-| `debug_client.py` | Debug client for troubleshooting |
+| `simple_devicesim.py` | UNIX socket server for device simulation |
+| `config_example.yaml` | Triggered response configuration example |
+| `config_immediate.yaml` | Immediate start configuration example |
+| `debug_client.py` | Debug client for simulator testing |
 
 ### Example Data Files
 
@@ -178,6 +299,9 @@ Each binary file contains the fields in definition order:
 | `graph_def.txt` | Complex example with multiple function types |
 | `test_def.txt` | Simple example for basic testing |
 | `demo_def.txt` | Generated by demo script |
+| `noise_test_def.txt` | Comprehensive noise parameter testing |
+| `simple_noise_test.txt` | Simple noise demonstration |
+| `period_demo_def.txt` | Period parameter demonstration |
 
 ## 🛠️ Usage Examples
 

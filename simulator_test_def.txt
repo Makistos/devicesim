@@ -1,0 +1,4 @@
+# Simple sine wave for simulator testing
+<sine 0 255 20>
+<square 100 200 16>
+0x55

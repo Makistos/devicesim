@@ -215,7 +215,7 @@ class DataGenerator:
                     clean_value = float(s_val)
                 else:  # Baseline
                     clean_value = 0.0
-                
+
                 # Determine min/max range for noise application
                 min_val = min(float(q_val), float(s_val), 0.0)
                 max_val = max(float(r_val), 0.0)
@@ -261,33 +261,33 @@ class DataGenerator:
 
     def apply_noise(self, clean_value: float, noise_level: float, min_val: float, max_val: float) -> int:
         """Apply uniform noise to a value.
-        
+
         Args:
             clean_value: The original clean signal value
             noise_level: Noise level from 0 (no noise) to 100 (completely random)
             min_val: Minimum value for the signal range
             max_val: Maximum value for the signal range
-            
+
         Returns:
             The noisy value as an integer
         """
         if noise_level <= 0:
             return int(clean_value)
-        
+
         if noise_level >= 100:
             # Completely random within the signal range
             return int(random.uniform(min_val, max_val))
-        
+
         # Mix clean signal with noise
         noise_factor = noise_level / 100.0
         signal_factor = 1.0 - noise_factor
-        
+
         # Generate uniform noise within the signal range
         noise_value = random.uniform(min_val, max_val)
-        
+
         # Blend clean signal with noise
         noisy_value = signal_factor * clean_value + noise_factor * noise_value
-        
+
         return int(noisy_value)
 
     def clamp_value(self, value: int) -> int:
