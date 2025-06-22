@@ -1,0 +1,4 @@
+# Requirements for function plotting scripts
+matplotlib>=3.0.0
+numpy>=1.15.0
+PyYAML>=5.0.0

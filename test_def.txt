@@ -1,0 +1,7 @@
+# Test definition file
+0x10
+0x20
+100
+-50
+<random 10 20>
+<sine -100 100>

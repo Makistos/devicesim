@@ -1,0 +1,16 @@
+0x80
+0x80
+0x50
+# Random value between 0 and 100
+<random 0 100>
+# Sine wave between -127 and 128
+<sine -127 128>
+# Square wave
+<square 0 255>
+# Triangle wave
+<triangle 0 100>
+# Sawtooth wave
+<sawtooth 90 99>
+# QRS Complex. q wave at -100 2 samples before R. R value 1000 every 16 samples. s wave value -150 2 samples after R.
+<qrs -100 2 1000 16 -150 2>
+<inverse_checksum>

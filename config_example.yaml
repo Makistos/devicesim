@@ -1,0 +1,38 @@
+WaitToStart: Yes
+ReceiveCount: 5  # 0 = unlimited messages
+
+# Replies to send for each received message (in order)
+Replies:
+  - reply_number: 1
+    Messages:
+      - file name: start\.1\.bin
+        delay: 0
+        repeat: 1
+  - reply_number: 2
+    Messages:
+      - file name: start\.2\.bin
+        delay: 0
+        repeat: 1
+  - reply_number: 3
+    Messages:
+      - file name: start\.3\.bin
+        delay: 0
+        repeat: 1
+  - reply_number: 4
+    Messages:
+      - file name: start\.4\.bin
+        delay: 0
+        repeat: 1
+  - reply_number: 5
+    Messages:
+      - file name: start\.5\.bin
+        delay: 0
+        repeat: 1
+  - reply_number: 6
+    Messages:
+      - file name: graph\..*\.bin
+        delay: 16
+        repeat: 0
+      - file name: numeric\..*\.bin
+        delay: 50
+        repeat: 0

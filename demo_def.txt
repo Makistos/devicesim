@@ -1,0 +1,9 @@
+# Demo definition file - Various function types
+0x55
+100
+-50
+<random 0 255>
+<sine -100 100>
+<square 10 200>
+<triangle 0 150>
+<sawtooth 20 80>
