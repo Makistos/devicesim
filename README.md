@@ -1,6 +1,26 @@
 # Device Simulator - Data Generation and Visualization
 
-A comprehensive Python toolkit for generating binary test data and creating advanced visualizations of various function outputs including sine waves, square waves, triangular patterns, QRS complexes, and more. Also includes a device simulation system using UNIX sockets.
+A comprehensive Python toolkit for generati## 📄 File Output Format
+
+### Individual Message Files
+The data generator creates **separate binary files for each sample**:
+- Input: `python3 generate_test_data.py def.txt messages 100`
+- Output: `messages.1.bin`, `messages.2.bin`, ..., `messages.100.bin`
+- Each file contains one complete message with all defined fields
+- File size = number_of_fields × bytes_per_field
+
+### Directory Structure Support
+Supports automatic directory creation for organized output:
+```bash
+# Creates output/batch1/ directory automatically
+python3 generate_test_data.py def.txt output/batch1/data 50
+
+# Creates nested directories as needed
+python3 generate_test_data.py def.txt experiments/2025/june/test 25
+```
+
+### Binary File Structure
+Each binary file contains the fields in definition order:est data and creating advanced visualizations of various function outputs including sine waves, square waves, triangular patterns, QRS complexes, and more. Also includes a device simulation system using UNIX sockets.
 
 ## 🚀 Features
 
@@ -59,6 +79,10 @@ python3 simple_test_demo.py
 # Generate separate message files (each sample in its own file)
 python3 generate_test_data.py your_def.txt messages 100
 # Creates: messages.1.bin, messages.2.bin, ..., messages.100.bin
+
+# Generate files with directory structure (auto-creates directories)
+python3 generate_test_data.py def.txt output/test_batch/data 50
+# Creates: output/test_batch/data.1.bin, ..., output/test_batch/data.50.bin
 
 # Create plots (Note: plotting tools work with single combined files)
 python3 plot_functions.py your_def.txt output.bin 100 --output-dir plots

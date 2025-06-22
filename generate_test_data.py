@@ -19,6 +19,7 @@ The script generates <count> separate binary files, each containing one data sam
 """
 
 import argparse
+import os
 import re
 import struct
 import sys
@@ -296,6 +297,16 @@ class DataGenerator:
         if base_filename.endswith('.bin'):
             base_filename = base_filename[:-4]
 
+        # Create directory if the base filename includes a path
+        directory = os.path.dirname(base_filename)
+        if directory and not os.path.exists(directory):
+            try:
+                os.makedirs(directory, exist_ok=True)
+                print(f"Created directory: {directory}")
+            except OSError as e:
+                print(f"Error creating directory '{directory}': {e}")
+                sys.exit(1)
+
         try:
             for i in range(count):
                 self.sample_index = i
@@ -356,6 +367,10 @@ Examples:
   
   python generate_test_data.py graph_def.txt messages 50 --bits 16
     Creates: messages.1.bin, messages.2.bin, ..., messages.50.bin
+  
+  python generate_test_data.py def.txt output/batch1/data 25
+    Creates: output/batch1/data.1.bin, ..., output/batch1/data.25.bin
+    (Automatically creates output/batch1/ directory)
 
 Definition file format:
   0x80              # Hex value
