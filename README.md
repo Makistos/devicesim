@@ -56,10 +56,11 @@ cd devicesim
 # Run the complete demo
 python3 simple_test_demo.py
 
-# Generate custom data
-python3 generate_test_data.py your_def.txt output.bin 100
+# Generate separate message files (each sample in its own file)
+python3 generate_test_data.py your_def.txt messages 100
+# Creates: messages.1.bin, messages.2.bin, ..., messages.100.bin
 
-# Create plots
+# Create plots (Note: plotting tools work with single combined files)
 python3 plot_functions.py your_def.txt output.bin 100 --output-dir plots
 
 # Analyze data
@@ -92,7 +93,25 @@ Create a text file defining your data structure:
 <qrs -100 2 1000 16 -150 2 24> # QRS complex with overall period of 24 samples
 ```
 
-## 📁 Project Structure
+## � File Output Format
+
+### Individual Message Files
+The data generator creates **separate binary files for each sample**:
+- Input: `python3 generate_test_data.py def.txt messages 100`
+- Output: `messages.1.bin`, `messages.2.bin`, ..., `messages.100.bin`
+- Each file contains one complete message with all defined fields
+- File size = number_of_fields × bytes_per_field
+
+### Binary File Structure
+Each binary file contains the fields in definition order:
+```
+[Field1][Field2][Field3]...[FieldN]
+```
+- 8-bit mode: Each field = 1 byte
+- 16-bit mode: Each field = 2 bytes (little-endian)
+- 32-bit mode: Each field = 4 bytes (little-endian)
+
+## �📁 Project Structure
 
 ### Data Generation and Visualization
 

@@ -3,16 +3,19 @@
 Test Data Generator
 
 Generates binary test data files based on definition files.
+Each data sample is written to a separate numbered binary file.
 
-Usage: python generate_test_data.py <definition_file> <output_file> <count> [--bits {8,16,32}]
+Usage: python generate_test_data.py <definition_file> <base_filename> <count> [--bits {8,16,32}]
+
+Output: Creates numbered files like base_filename.1.bin, base_filename.2.bin, etc.
 
 Definition file format:
 - 0x<hex>: Hexadecimal values written as-is
 - <number>: Decimal numbers (can be negative) converted to hex
-- <function param1 param2 ...>: Function calls (placeholder for future implementation)
+- <function param1 param2 ...>: Function calls with parameters
 - # comment: Lines starting with # are ignored
 
-The script generates <count> data points and writes them to a binary file.
+The script generates <count> separate binary files, each containing one data sample.
 """
 
 import argparse
@@ -288,23 +291,31 @@ class DataGenerator:
             else:
                 regular_fields.append((i, field))
 
+        # Extract base filename (remove .bin extension if present)
+        base_filename = output_file
+        if base_filename.endswith('.bin'):
+            base_filename = base_filename[:-4]
+
         try:
-            with open(output_file, 'wb') as f:
-                for i in range(count):
-                    self.sample_index = i
-                    sample_values = [0] * len(fields)  # Initialize sample array
+            for i in range(count):
+                self.sample_index = i
+                sample_values = [0] * len(fields)  # Initialize sample array
 
-                    # First pass: process all non-checksum fields
-                    for field_idx, field in regular_fields:
-                        value = self.process_field(field)
-                        sample_values[field_idx] = value
+                # First pass: process all non-checksum fields
+                for field_idx, field in regular_fields:
+                    value = self.process_field(field)
+                    sample_values[field_idx] = value
 
-                    # Second pass: process checksum fields with access to other field data
-                    self.current_sample_data = [sample_values[idx] for idx, _ in regular_fields]
-                    for field_idx, field in checksum_fields:
-                        value = self.process_field(field)
-                        sample_values[field_idx] = value
+                # Second pass: process checksum fields with access to other field data
+                self.current_sample_data = [sample_values[idx] for idx, _ in regular_fields]
+                for field_idx, field in checksum_fields:
+                    value = self.process_field(field)
+                    sample_values[field_idx] = value
 
+                # Create individual file for this sample
+                sample_filename = f"{base_filename}.{i+1}.bin"
+                
+                with open(sample_filename, 'wb') as f:
                     # Write all values in original field order
                     for value in sample_values:
                         # Pack value according to bit width
@@ -317,42 +328,48 @@ class DataGenerator:
 
                         f.write(packed)
 
-                    # Progress indicator
-                    if (i + 1) % 100 == 0 or i == count - 1:
-                        print(f"Generated {i + 1}/{count} samples...")
+                # Progress indicator
+                if (i + 1) % 100 == 0 or i == count - 1:
+                    print(f"Generated {i + 1}/{count} samples...")
 
         except Exception as e:
-            print(f"Error writing output file: {e}")
+            print(f"Error writing output files: {e}")
             sys.exit(1)
 
-        print(f"Successfully generated {output_file}")
+        print(f"Successfully generated {count} files: {base_filename}.1.bin to {base_filename}.{count}.bin")
 
         # Print file size info
-        file_size = count * len(fields) * (self.bits // 8)
-        print(f"File size: {file_size} bytes ({count} samples × {len(fields)} fields × {self.bits//8} bytes)")
+        file_size = len(fields) * (self.bits // 8)
+        total_size = file_size * count
+        print(f"Each file size: {file_size} bytes ({len(fields)} fields × {self.bits//8} bytes)")
+        print(f"Total size: {total_size} bytes ({count} files)")
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Generate binary test data from definition files",
+        description="Generate binary test data from definition files. Each sample creates a separate numbered file.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python generate_test_data.py graph_def.txt output.bin 1000
-  python generate_test_data.py graph_def.txt output.bin 1000 --bits 16
+  python generate_test_data.py graph_def.txt testdata 100
+    Creates: testdata.1.bin, testdata.2.bin, ..., testdata.100.bin
+  
+  python generate_test_data.py graph_def.txt messages 50 --bits 16
+    Creates: messages.1.bin, messages.2.bin, ..., messages.50.bin
 
 Definition file format:
   0x80              # Hex value
   42                # Decimal value
   -100              # Negative decimal
   <random 0 100>    # Function call
+  <sine 0 255 20>   # Sine wave with period
   # comment         # Ignored
         """
     )
 
     parser.add_argument('definition_file', help='Input definition file')
-    parser.add_argument('output_file', help='Output binary file')
-    parser.add_argument('count', type=int, help='Number of data points to generate')
+    parser.add_argument('base_filename', help='Base filename for output (creates numbered .bin files)')
+    parser.add_argument('count', type=int, help='Number of separate files to generate')
     parser.add_argument('--bits', choices=['8', '16', '32'], default='8',
                         help='Bit width for values (default: 8)')
 
@@ -363,7 +380,7 @@ Definition file format:
         sys.exit(1)
 
     generator = DataGenerator(bits=int(args.bits))
-    generator.generate_data(args.definition_file, args.output_file, args.count)
+    generator.generate_data(args.definition_file, args.base_filename, args.count)
 
 
 if __name__ == "__main__":
