@@ -1,38 +1,35 @@
-WaitToStart: Yes
-ReceiveCount: 5  # 0 = unlimited messages
+# Device Simulator Configuration Example
+# Demonstrates waitCount-based message triggering
 
-# Replies to send for each received message (in order)
-Replies:
-  - reply_number: 1
-    Messages:
-      - file name: start\.1\.bin
-        delay: 0
-        repeat: 1
-  - reply_number: 2
-    Messages:
-      - file name: start\.2\.bin
-        delay: 0
-        repeat: 1
-  - reply_number: 3
-    Messages:
-      - file name: start\.3\.bin
-        delay: 0
-        repeat: 1
-  - reply_number: 4
-    Messages:
-      - file name: start\.4\.bin
-        delay: 0
-        repeat: 1
-  - reply_number: 5
-    Messages:
-      - file name: start\.5\.bin
-        delay: 0
-        repeat: 1
-  - reply_number: 6
-    Messages:
-      - file name: graph\..*\.bin
-        delay: 16
-        repeat: 0
-      - file name: numeric\..*\.bin
-        delay: 50
-        repeat: 0
+Messages:
+  # Send these files in response to specific client message counts
+  - file name: start\.1\.bin
+    delay: 0
+    repeat: 1
+    waitCount: 1        # Send after 1st client message
+  - file name: start\.2\.bin
+    delay: 0
+    repeat: 1
+    waitCount: 2        # Send after 2nd client message
+  - file name: start\.3\.bin
+    delay: 0
+    repeat: 1
+    waitCount: 3        # Send after 3rd client message
+  - file name: start\.4\.bin
+    delay: 0
+    repeat: 1
+    waitCount: 4        # Send after 4th client message
+  - file name: start\.5\.bin
+    delay: 0
+    repeat: 1
+    waitCount: 5        # Send after 5th client message
+
+  # Start continuous sending after 5th client message
+  - file name: graph\..*\.bin
+    delay: 16
+    repeat: 0           # 0 = infinite repeat
+    waitCount: 5
+  - file name: numeric\..*\.bin
+    delay: 50
+    repeat: 0           # 0 = infinite repeat
+    waitCount: 5

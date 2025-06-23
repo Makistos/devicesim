@@ -24,32 +24,29 @@ def load_config(config_file: str) -> Dict[str, Any]:
     with open(config_file, 'r', encoding='utf-8') as f:
         config = yaml.safe_load(f)
 
-    # Convert WaitToStart to boolean
-    wait_to_start_value = config.get('WaitToStart', 'No')
-    if isinstance(wait_to_start_value, bool):
-        wait_to_start = wait_to_start_value
+    # Support new simplified format with Messages array
+    if 'Messages' in config:
+        messages = config['Messages']
+    # Backward compatibility: convert old Replies format
+    elif 'Replies' in config:
+        messages = []
+        for reply in config['Replies']:
+            if 'Messages' in reply:
+                messages.extend(reply['Messages'])
     else:
-        wait_to_start = (
-            str(wait_to_start_value).lower() in ['yes', 'true', '1']
-        )
-    receive_count = int(config.get('ReceiveCount', 0))
+        messages = []
 
-    # Support both old format (Messages) and new format (Replies)
-    if 'Replies' in config:
-        replies = config['Replies']
-    elif 'Messages' in config:
-        # Convert old format to new format for backward compatibility
-        replies = [{
-            'reply_number': 1,
-            'Messages': config['Messages']
-        }]
-    else:
-        replies = []
+    # Ensure each message has required fields with defaults
+    for message in messages:
+        if 'waitCount' not in message:
+            message['waitCount'] = 0  # Default: send immediately
+        if 'delay' not in message:
+            message['delay'] = 0  # Default: no delay
+        if 'repeat' not in message:
+            message['repeat'] = 1  # Default: send once
 
     return {
-        'WaitToStart': wait_to_start,
-        'ReceiveCount': receive_count,
-        'Replies': replies
+        'Messages': messages
     }
 
 
@@ -96,148 +93,132 @@ def receive_with_timeout(connection, timeout: float) -> Optional[bytes]:
         return None
 
 
-def create_message_schedule_for_reply(reply_config: Dict[str, Any],
-                                      base_dir: str) -> List[Dict[str, Any]]:
-    """Create message schedule for a specific reply"""
-    message_schedule = []
-
-    for msg_config in reply_config.get('Messages', []):
-        pattern = msg_config['file name']
-        delay = msg_config['delay']
-        repeat = msg_config['repeat']
-
-        matching_files = find_matching_files(pattern, base_dir)
-        file_list = [os.path.basename(f) for f in matching_files]
-        print(f"  Pattern '{pattern}' matches {len(matching_files)} files:")
-        print(f"    {file_list}")
-
-        for file_path in matching_files:
-            message_schedule.append({
-                'file_path': file_path,
-                'delay': delay,
-                'repeat': repeat,
-                'sent_count': 0
-            })
-
-    return message_schedule
-
-
 def create_message_schedule(config: Dict[str, Any],
                             base_dir: str) -> List[Dict[str, Any]]:
-    """Create message schedule from configuration (backward compatibility)"""
-    # This function is kept for backward compatibility
-    # For new reply-based configs, we'll use create_message_schedule_for_reply
-    if 'Replies' in config and config['Replies']:
-        # Use the first reply for backward compatibility
-        first_reply = config['Replies'][0]
-        return create_message_schedule_for_reply(first_reply, base_dir)
+    """Create message schedule from configuration - DEPRECATED"""
+    print("WARNING: create_message_schedule is deprecated")
+    return []
+
+
+def create_message_schedule_for_reply(reply_config: Dict[str, Any],
+                                      base_dir: str) -> List[Dict[str, Any]]:
+    """Create message schedule for a specific reply - DEPRECATED"""
+    print("WARNING: create_message_schedule_for_reply is deprecated")
     return []
 
 
 def run_message_loop(connection, config: Dict[str, Any]) -> None:
-    """Run the main message loop with reply-based logic"""
-    replies = config.get('Replies', [])
-    receive_count = config['ReceiveCount']
+    """Run the main message loop with waitCount-based logic"""
+    messages = config.get('Messages', [])
 
-    if not replies:
-        print("No replies configured")
+    if not messages:
+        print("No messages configured")
         return
 
-    print(f"Configured {len(replies)} different replies")
-    print(f"ReceiveCount: {receive_count} (0 = unlimited)")
+    print(f"Configured {len(messages)} messages")
 
-    # Show configuration for each reply
+    # Group messages by waitCount for efficient processing
     base_dir = os.getcwd()
-    for reply in replies:
-        reply_num = reply.get('reply_number', 'unknown')
-        print(f"Reply {reply_num} configuration:")
-        create_message_schedule_for_reply(reply, base_dir)
+    wait_groups = {}
+    immediate_messages = []
 
-    received_count = 0
-    current_reply_index = 0
+    for msg_config in messages:
+        wait_count = msg_config.get('waitCount', 0)
+        pattern = msg_config['file name']
+        delay = msg_config.get('delay', 0)
+        repeat = msg_config.get('repeat', 1)
 
-    # Phase 1: Handle ReceiveCount messages with corresponding replies
-    if receive_count > 0:
-        print(f"\nPhase 1: Handling first {receive_count} received messages")
-        while received_count < receive_count:
+        # Find matching files
+        matching_files = find_matching_files(pattern, base_dir)
+        print(f"Pattern '{pattern}' matches {len(matching_files)} files (waitCount={wait_count})")
+
+        # Create message entries for each matching file
+        for file_path in matching_files:
+            message_entry = {
+                'file_path': file_path,
+                'delay': delay,
+                'repeat': repeat,
+                'sent_count': 0,
+                'waitCount': wait_count
+            }
+
+            if wait_count == 0:
+                immediate_messages.append(message_entry)
+            else:
+                if wait_count not in wait_groups:
+                    wait_groups[wait_count] = []
+                wait_groups[wait_count].append(message_entry)
+
+    # Send immediate messages (waitCount = 0)
+    if immediate_messages:
+        print(f"\nSending {len(immediate_messages)} immediate messages")
+        execute_message_group(connection, immediate_messages)
+
+    # Process triggered messages
+    if wait_groups:
+        max_wait_count = max(wait_groups.keys())
+        print(f"Will wait for up to {max_wait_count} client messages")
+
+        received_count = 0
+
+        while received_count < max_wait_count:
             # Wait for incoming message
-            print(f"\nWaiting for message {received_count + 1}...")
+            print(f"\nWaiting for client message {received_count + 1}...")
             received_data = receive_with_timeout(connection, 30.0)
 
             if not received_data:
-                print("No message received, continuing...")
-                continue
+                print("No message received, timeout reached")
+                break
 
             received_count += 1
-            print(f"Received message #{received_count}")
+            print(f"Received client message #{received_count}")
 
-            # Use corresponding reply if available
-            if current_reply_index < len(replies):
-                reply_to_use = replies[current_reply_index]
-                print(f"Using reply #{reply_to_use.get('reply_number', current_reply_index + 1)}")
+            # Check if any message groups should be triggered
+            if received_count in wait_groups:
+                messages_to_send = wait_groups[received_count]
+                print(f"Triggering {len(messages_to_send)} message(s) for waitCount {received_count}")
+                execute_message_group(connection, messages_to_send)
 
-                # Create and execute message schedule for this reply
-                reply_schedule = create_message_schedule_for_reply(reply_to_use, base_dir)
-                if reply_schedule:
-                    execute_reply_schedule(connection, reply_schedule)
-                else:
-                    print("No messages to send for this reply")
-
-                current_reply_index += 1
-            else:
-                print("No more replies configured for this message")
-
-    # Phase 2: Continue with remaining replies and their message patterns
-    if current_reply_index < len(replies):
-        print(f"\nPhase 2: Processing remaining replies {current_reply_index + 1} to {len(replies)}")
-        while current_reply_index < len(replies):
-            reply_to_use = replies[current_reply_index]
-            reply_num = reply_to_use.get('reply_number', current_reply_index + 1)
-            print(f"\nProcessing reply #{reply_num}")
-
-            # Create and execute message schedule for this reply
-            reply_schedule = create_message_schedule_for_reply(reply_to_use, base_dir)
-            if reply_schedule:
-                execute_continuous_schedule(connection, reply_schedule)
-            else:
-                print("No messages to send for this reply")
-
-            current_reply_index += 1
-
-    print("\nAll replies processed")
+    print("\nMessage loop completed")
 
 
-def execute_reply_schedule(connection,
-                           reply_schedule: List[Dict[str, Any]]) -> None:
-    """Execute a reply schedule (send messages with timing)"""
-    print(f"Executing reply with {len(reply_schedule)} message(s)")
+def execute_message_group(connection, messages: List[Dict[str, Any]]) -> None:
+    """Execute a group of messages with proper timing and repetition"""
+    if not messages:
+        return
 
-    for msg in reply_schedule:
-        delay_seconds = msg['delay'] / 1000.0  # Convert milliseconds to seconds
-        repeat_count = msg['repeat']
+    # Separate messages by behavior type
+    immediate_messages = [msg for msg in messages if msg['repeat'] != 0 or msg['delay'] == 0]
+    continuous_messages = [msg for msg in messages if msg['repeat'] == 0 and msg['delay'] > 0]
+
+    # Send immediate/finite messages first
+    for msg in immediate_messages:
+        delay_seconds = msg['delay'] / 1000.0 if msg['delay'] > 0 else 0
+        repeat_count = msg['repeat'] if msg['repeat'] > 0 else 1
 
         print(f"Sending {os.path.basename(msg['file_path'])}: "
               f"delay={msg['delay']}ms, repeat={repeat_count}")
 
-        if delay_seconds > 0:
-            print(f"Waiting {delay_seconds} seconds before sending...")
-            time.sleep(delay_seconds)
+        for i in range(repeat_count):
+            if i > 0 and delay_seconds > 0:
+                time.sleep(delay_seconds)
 
-        # Send the message
-        if send_file(msg['file_path'], connection):
-            msg['sent_count'] = 1
-
-            # Handle repeats
-            for i in range(1, repeat_count):
-                if delay_seconds > 0:
-                    time.sleep(delay_seconds)
-                if not send_file(msg['file_path'], connection):
-                    print(f"Failed to send repeat {i+1}, stopping")
-                    return
+            if send_file(msg['file_path'], connection):
                 msg['sent_count'] += 1
-        else:
-            print("Send failed, stopping reply execution")
-            return
+            else:
+                print(f"Failed to send {os.path.basename(msg['file_path'])}, stopping")
+                return
+
+    # Handle continuous messages (repeat=0) with scheduling
+    if continuous_messages:
+        execute_continuous_schedule(connection, continuous_messages)
+
+
+def execute_reply_schedule(connection,
+                           reply_schedule: List[Dict[str, Any]]) -> None:
+    """Execute a reply schedule (send messages with timing) - DEPRECATED"""
+    print("WARNING: execute_reply_schedule is deprecated, use execute_message_group instead")
+    execute_message_group(connection, reply_schedule)
 
 
 def execute_continuous_schedule(connection, reply_schedule: List[Dict[str, Any]]) -> None:
@@ -349,18 +330,7 @@ def main():
         print("Client connected")
 
         try:
-            # Wait for initial message if configured
-            if config['WaitToStart']:
-                print("WaitToStart is enabled - waiting for initial message...")
-                initial_data = receive_with_timeout(connection, 30.0)
-                if not initial_data:
-                    print("No initial message received, exiting")
-                    return
-                print("Initial message received, starting device simulation")
-            else:
-                print("WaitToStart is disabled - starting immediately")
-
-            # Run the message loop
+            # Run the message loop with new waitCount-based logic
             run_message_loop(connection, config)
 
         except (OSError, ConnectionError) as e:

@@ -1,0 +1,10 @@
+# Simple immediate mode configuration
+# Sends files immediately upon client connection
+
+Messages:
+  - file name: start\.1\.bin
+    delay: 0
+    repeat: 1
+  - file name: graph\..*\.bin
+    delay: 16
+    repeat: 0

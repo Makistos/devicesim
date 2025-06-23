@@ -127,72 +127,54 @@ The simulator uses YAML files to define communication behavior:
 
 ### Basic Structure
 ```yaml
-WaitToStart: Yes/No          # Wait for trigger message before starting
-ReceiveCount: 5              # Number of messages to handle (0 = unlimited)
-
-Replies:                     # List of reply sequences
-  - reply_number: 1          # Reply sequence identifier
-    Messages:                # Messages to send for this reply
-      - file name: pattern   # File pattern (regex supported)
-        delay: 0             # Delay in milliseconds
-        repeat: 1            # Repeat count (0 = infinite)
+Messages:                    # List of messages to send
+  - file name: pattern       # File pattern (regex supported)
+    delay: 0                 # Delay in milliseconds before sending
+    repeat: 1                # Repeat count (0 = infinite)
+    waitCount: 0             # Optional: wait for this many incoming messages (default: 0)
 ```
 
 ### Configuration Parameters
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
-| `WaitToStart` | Boolean | `Yes`: Wait for trigger message<br>`No`: Start immediately |
-| `ReceiveCount` | Integer | Number of incoming messages to process<br>`0` = unlimited |
-| `reply_number` | Integer | Sequential identifier for reply stages |
 | `file name` | String | File pattern (supports regex)<br>Example: `start\.1\.bin` or `graph\..*\.bin` |
 | `delay` | Integer | Delay in milliseconds before sending |
 | `repeat` | Integer | Number of times to repeat<br>`0` = infinite, `1` = once |
+| `waitCount` | Integer | *(Optional)* Wait for this many incoming messages before sending<br>`0` = send immediately (default) |
 
 ### Example Configurations
 
-#### Triggered Response Mode (`config_example.yaml`)
+#### Simple Immediate Mode
 ```yaml
-WaitToStart: Yes
-ReceiveCount: 5
-
-Replies:
-  - reply_number: 1
-    Messages:
-      - file name: start\.1\.bin    # Send specific startup file
-        delay: 0
-        repeat: 1
-  - reply_number: 2
-    Messages:
-      - file name: start\.2\.bin    # Send next startup file
-        delay: 0  
-        repeat: 1
-  - reply_number: 6
-    Messages:
-      - file name: graph\..*\.bin   # Send all graph files
-        delay: 16                   # 16ms between files
-        repeat: 0                   # Infinite repeat
-      - file name: numeric\..*\.bin # Send all numeric files
-        delay: 50                   # 50ms between files  
-        repeat: 0                   # Infinite repeat
+Messages:
+  - file name: start\.1\.bin    # Send immediately on connection
+    delay: 0
+    repeat: 1
+  - file name: graph\..*\.bin   # Send all graph files continuously
+    delay: 16                   # 16ms between files
+    repeat: 0                   # Infinite repeat
 ```
 
-#### Immediate Start Mode (`config_immediate.yaml`)
+#### Triggered Response Mode
 ```yaml
-WaitToStart: No
-ReceiveCount: 1
-
-Replies:
-  - reply_number: 1
-    Messages:
-      - file name: start\.1\.bin
-        delay: 0
-        repeat: 1
-  - reply_number: 2  
-    Messages:
-      - file name: graph\..*\.bin
-        delay: 16
-        repeat: 0
+Messages:
+  - file name: start\.1\.bin    # Send after 1st incoming message
+    delay: 0
+    repeat: 1
+    waitCount: 1
+  - file name: start\.2\.bin    # Send after 2nd incoming message
+    delay: 0
+    repeat: 1
+    waitCount: 2
+  - file name: graph\..*\.bin   # Send after 5th incoming message
+    delay: 16                   # Then repeat continuously
+    repeat: 0
+    waitCount: 5
+  - file name: numeric\..*\.bin # Also send after 5th message
+    delay: 50                   # Different timing
+    repeat: 0
+    waitCount: 5
 ```
 
 ### File Pattern Matching
@@ -209,8 +191,10 @@ The simulator supports regex patterns for flexible file selection:
 ### Communication Protocol
 
 1. **Client Connection**: Client connects to `/tmp/test_socket.sock`
-2. **Trigger Message** (if `WaitToStart: Yes`): Client sends any message to trigger start
-3. **Response Sequence**: Server sends files according to `Replies` configuration
+2. **Message Processing**: For each message definition:
+   - If `waitCount > 0`: Wait for that many incoming client messages
+   - If `waitCount = 0` (or omitted): Send immediately after connection
+3. **File Transmission**: Send matching files with specified `delay` and `repeat` settings
 4. **File Rotation**: For `repeat: 0`, cycles through matching files infinitely
 5. **Timing**: Respects `delay` parameters between transmissions
 
@@ -219,7 +203,7 @@ The simulator supports regex patterns for flexible file selection:
 ```bash
 # Create test data files
 python3 generate_test_data.py my_def.txt start 5
-python3 generate_test_data.py graph_def.txt graph 10  
+python3 generate_test_data.py graph_def.txt graph 10
 python3 generate_test_data.py numeric_def.txt numeric 8
 
 # Start simulator with triggered mode

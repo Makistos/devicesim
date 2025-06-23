@@ -1,18 +1,16 @@
-WaitToStart: No
-ReceiveCount: 1  # Only handle 1 incoming message
+# Immediate mode configuration
+# Sends files immediately upon client connection (waitCount = 0)
 
-# Replies to send for each received message (in order)
-Replies:
-  - reply_number: 1
-    Messages:
-      - file name: start\.1\.bin
-        delay: 0
-        repeat: 1
-  - reply_number: 2
-    Messages:
-      - file name: graph\..*\.bin
-        delay: 16
-        repeat: 0
-      - file name: numeric\..*\.bin
-        delay: 50
-        repeat: 0
+Messages:
+  - file name: start\.1\.bin
+    delay: 0
+    repeat: 1
+    waitCount: 0        # Send immediately
+  - file name: graph\..*\.bin
+    delay: 16
+    repeat: 0           # 0 = infinite repeat
+    waitCount: 0        # Send immediately
+  - file name: numeric\..*\.bin
+    delay: 50
+    repeat: 0           # 0 = infinite repeat
+    waitCount: 0        # Send immediately

@@ -76,31 +76,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-                print(f"  -> Timeout waiting for response to message {i}")
-
-        print("Keeping connection open for a few more seconds...")
-        time.sleep(5)
-
-        # Try to receive any more data
-        try:
-            client_socket.settimeout(1.0)
-            while True:
-                data = client_socket.recv(1024)
-                if data:
-                    print(f"Additional data: {data}")
-                else:
-                    break
-        except socket.timeout:
-            print("No more data available")
-
-    except Exception as e:
-        print(f"Error: {e}")
-    finally:
-        if client_socket:
-            try:
-                client_socket.close()
-            except:
-                pass
-
-if __name__ == "__main__":
-    main()

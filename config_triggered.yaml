@@ -1,0 +1,24 @@
+# Triggered mode configuration using waitCount
+# Demonstrates granular control over when each message is sent
+
+Messages:
+  - file name: start\.1\.bin
+    delay: 0
+    repeat: 1
+    waitCount: 1        # Send after 1st client message
+  - file name: start\.2\.bin
+    delay: 0
+    repeat: 1
+    waitCount: 2        # Send after 2nd client message
+  - file name: start\.3\.bin
+    delay: 0
+    repeat: 1
+    waitCount: 3        # Send after 3rd client message
+  - file name: graph\..*\.bin
+    delay: 16
+    repeat: 0
+    waitCount: 5        # Start continuous sending after 5th message
+  - file name: numeric\..*\.bin
+    delay: 50
+    repeat: 0
+    waitCount: 5        # Also start after 5th message
