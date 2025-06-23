@@ -7,13 +7,13 @@ Messages:
     delay: 0
     repeat: -1          # Wait for 1 client message between sends
     waitCount: 0        # Start immediately
-    
-  # Send after 2nd client message, then wait for 2 client messages between sends  
+
+  # Send after 2nd client message, then wait for 2 client messages between sends
   - file name: start\.2\.bin
     delay: 100
     repeat: -2          # Wait for 2 client messages between sends
     waitCount: 2        # Start after 2nd client message
-    
+
   # Normal positive repeat for comparison
   - file name: start\.3\.bin
     delay: 0

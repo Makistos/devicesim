@@ -100,7 +100,7 @@ Messages:
 **How it works:**
 1. **Initial Send**: Message is sent after `waitCount` condition is met
 2. **Wait Phase**: Simulator waits for abs(repeat) client messages
-3. **Response Phase**: Message is sent again  
+3. **Response Phase**: Message is sent again
 4. **Repeat**: Steps 2-3 continue indefinitely
 
 ### Repeat Parameter Summary
@@ -110,7 +110,7 @@ Messages:
 
 ### Use Cases for Negative Repeat
 - **Interactive Protocols**: Client must acknowledge each message
-- **Flow Control**: Prevent message flooding  
+- **Flow Control**: Prevent message flooding
 - **Handshake Patterns**: Synchronized communication
 - **Testing**: Simulate real device acknowledgment requirements
 
@@ -122,9 +122,9 @@ Messages:
 - `config_example.yaml` - Updated to use waitCount format
 - `config_immediate.yaml` - Updated to use waitCount format
 
-## Testing
+## Testing and Analysis
 
-Run the demos to see the new functionality:
+Run the demos and analyzers to see the new functionality:
 ```bash
 # Basic waitCount functionality test
 python3 test_waitcount.py
@@ -132,12 +132,52 @@ python3 test_waitcount.py
 # Request-response functionality test (negative repeat)
 python3 test_request_response.py
 
-# Comprehensive demonstration
-python3 demo_waitcount.py
+# Comprehensive test of all modes
+python3 test_comprehensive.py
 
-# Updated debug client
+# Analyze message flow for any configuration
+python3 analyze_message_flow.py config_simple.yaml
+python3 analyze_message_flow.py config_request_response.yaml 8
+python3 analyze_message_flow.py config_triggered.yaml 12
+
+# Interactive demos
+python3 demo_waitcount.py
 python3 debug_client_new.py
 ```
+
+## Message Flow Analyzer
+
+The `analyze_message_flow.py` tool provides detailed analysis of simulator behavior for any YAML configuration:
+
+### Features
+- **Automatic Configuration Analysis**: Parses any YAML config and explains behavior
+- **Real-time Message Tracking**: Shows exact message exchanges with timestamps
+- **Pattern Recognition**: Identifies immediate, triggered, and request-response patterns
+- **Comprehensive Reporting**: Provides timeline and pattern analysis
+- **Generic Support**: Works with any valid simulator configuration
+
+### Usage
+```bash
+# Basic analysis (default: 10 client messages)
+python3 analyze_message_flow.py <config.yaml>
+
+# Extended analysis with custom message count
+python3 analyze_message_flow.py <config.yaml> <max_client_messages>
+
+# Examples
+python3 analyze_message_flow.py config_simple.yaml
+python3 analyze_message_flow.py config_request_response.yaml 15
+python3 analyze_message_flow.py config_triggered.yaml 8
+```
+
+### Output Includes
+- Configuration parameter breakdown
+- Expected trigger conditions and behaviors
+- Real-time message timeline with timestamps
+- Pattern analysis and recommendations
+- Complete message flow summary
+
+This tool is essential for understanding complex configurations and debugging communication patterns.
 
 ## Backward Compatibility
 

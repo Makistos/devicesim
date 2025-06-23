@@ -1,0 +1,57 @@
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    MESSAGE FLOW: config_request_response.yaml               │
+├─────────────────────┬───────────────────────┬───────────────────────────────┤
+│      CLIENT         │       SIMULATOR       │          DESCRIPTION          │
+├─────────────────────┼───────────────────────┼───────────────────────────────┤
+│                     │                       │                               │
+│ 1. [connects] ────→ │                       │ Client connects               │
+│                     │ ────→ start.1.bin     │ IMMEDIATE (waitCount=0)       │
+│                     │       [0xAA,0xBB]     │ repeat:-1 pattern begins      │
+│                     │                       │                               │
+│ 2. "ack_for_start1" │                       │                               │
+│    [14 bytes] ────→ │                       │ 1st client message            │
+│                     │ ────→ start.1.bin     │ RESPONSE (repeat:-1, need 1)  │
+│                     │       [0xAA,0xBB]     │                               │
+│                     │ ────→ start.3.bin×3   │ TRIGGERED (waitCount:1)       │
+│                     │       [0xAA,0xBB]×3   │ Normal repeat: 3 times        │
+│                     │                       │                               │
+│ 3. "trigger_start2" │                       │                               │
+│    [14 bytes] ────→ │                       │ 2nd client message            │
+│                     │ ────→ start.2.bin     │ TRIGGERED (waitCount:2)       │
+│                     │       [0xAA,0xBB]     │ repeat:-2 pattern begins      │
+│                     │                       │                               │
+│ 4. "ack1_for_start2"│                       │                               │
+│    [15 bytes] ────→ │                       │ 3rd client message (1/2)      │
+│                     │                       │                               │
+│ 5. "ack2_for_start2"│                       │                               │
+│    [15 bytes] ────→ │                       │ 4th client message (2/2)      │
+│                     │ ────→ start.2.bin     │ RESPONSE (repeat:-2, need 2)  │
+│                     │       [0xAA,0xBB]     │                               │
+│                     │                       │                               │
+│ 6. "another_ack1"   │                       │                               │
+│    [12 bytes] ────→ │                       │ 5th client message            │
+│                     │ ────→ start.1.bin     │ RESPONSE (repeat:-1, need 1)  │
+│                     │       [0xAA,0xBB]     │                               │
+│                     │                       │                               │
+│ 7. [continues...]   │ [continues...]        │ Patterns continue infinitely  │
+│                     │                       │                               │
+└─────────────────────┴───────────────────────┴───────────────────────────────┘
+
+PATTERN SUMMARY:
+┌─────────────────┬─────────────┬─────────────┬─────────────────────────────┐
+│     MESSAGE     │   REPEAT    │  WAITCOUNT  │          BEHAVIOR           │
+├─────────────────┼─────────────┼─────────────┼─────────────────────────────┤
+│  start.1.bin    │     -1      │      0      │ Send immediately, then 1:1  │
+│                 │             │             │ request-response forever    │
+├─────────────────┼─────────────┼─────────────┼─────────────────────────────┤
+│  start.2.bin    │     -2      │      2      │ Wait for 2nd client msg,    │
+│                 │             │             │ then 2:1 request-response   │
+├─────────────────┼─────────────┼─────────────┼─────────────────────────────┤
+│  start.3.bin    │      3      │      1      │ Wait for 1st client msg,    │
+│                 │             │             │ send 3 times, then stop     │
+└─────────────────┴─────────────┴─────────────┴─────────────────────────────┘
+
+REQUEST-RESPONSE RATIOS:
+• repeat: -1  →  1 client message : 1 server response
+• repeat: -2  →  2 client messages : 1 server response  
+• repeat: -N  →  N client messages : 1 server response

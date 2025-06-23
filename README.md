@@ -152,7 +152,7 @@ The `repeat` parameter controls how messages are sent and supports three distinc
 - **Timing**: Uses `delay` parameter between sends
 - **Example**: `repeat: 3` sends the message 3 times then stops
 
-#### Zero Value (`repeat: 0`) 
+#### Zero Value (`repeat: 0`)
 - **Behavior**: Send the message continuously (infinite loop)
 - **Timing**: Uses `delay` parameter between sends
 - **Example**: `repeat: 0` sends the message forever with specified delay
@@ -160,7 +160,7 @@ The `repeat` parameter controls how messages are sent and supports three distinc
 
 #### Negative Values (`repeat < 0`) - Request-Response Mode
 - **Behavior**: Creates a request-response pattern
-- **Process**: 
+- **Process**:
   1. Send message immediately (respecting `waitCount` if specified)
   2. Wait for abs(repeat) client messages
   3. Send message again
@@ -170,7 +170,7 @@ The `repeat` parameter controls how messages are sent and supports three distinc
 
 #### Combining with waitCount
 - **waitCount + positive repeat**: Wait for trigger, then send N times
-- **waitCount + zero repeat**: Wait for trigger, then send continuously  
+- **waitCount + zero repeat**: Wait for trigger, then send continuously
 - **waitCount + negative repeat**: Wait for trigger, send once, then enter request-response mode
 
 ### Example Configurations
@@ -252,6 +252,11 @@ python3 generate_test_data.py numeric_def.txt numeric 8
 # Start simulator with triggered mode
 python3 simple_devicesim.py config_example.yaml
 
+# Analyze message flow for any configuration
+python3 analyze_message_flow.py config_request_response.yaml 8
+python3 analyze_message_flow.py config_simple.yaml 5
+python3 analyze_message_flow.py config_triggered.yaml 10
+
 # Test with debug client (sends trigger and receives data)
 python3 debug_client.py
 ```
@@ -315,7 +320,9 @@ Each binary file contains the fields in definition order:
 | File | Description |
 |------|-------------|
 | `simple_devicesim.py` | UNIX socket server for device simulation |
+| `analyze_message_flow.py` | **NEW**: Generic message flow analyzer for any YAML config |
 | `config_example.yaml` | Triggered response configuration example |
+| `config_request_response.yaml` | Request-response mode configuration example |
 | `config_immediate.yaml` | Immediate start configuration example |
 | `debug_client.py` | Debug client for simulator testing |
 
@@ -399,8 +406,14 @@ The plotting tools create professional visualizations with:
 # Run plotting demo
 python3 simple_test_demo.py
 
-# Test device simulation
-python3 test_complete.py
+# Test device simulation features
+python3 test_comprehensive.py       # Test all repeat modes together
+python3 test_request_response.py    # Test negative repeat functionality
+python3 test_waitcount.py           # Test waitCount functionality
+
+# Analyze message flow for any configuration
+python3 analyze_message_flow.py config_simple.yaml
+python3 analyze_message_flow.py config_request_response.yaml 10
 
 # Debug connections
 python3 debug_client.py

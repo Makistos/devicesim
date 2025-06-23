@@ -186,13 +186,13 @@ def execute_message_group(connection, messages: List[Dict[str, Any]]) -> None:
     """Execute a group of messages with proper timing and repetition"""
     if not messages:
         return
-    
+
     # Separate messages by behavior type
     request_response_messages = [msg for msg in messages if msg['repeat'] < 0]
     immediate_messages = [msg for msg in messages if msg['repeat'] > 0]
     single_messages = [msg for msg in messages if msg['repeat'] == 0 and msg['delay'] == 0]
     continuous_messages = [msg for msg in messages if msg['repeat'] == 0 and msg['delay'] > 0]
-    
+
     # Handle single messages (repeat=0, delay=0)
     for msg in single_messages:
         print(f"Sending {os.path.basename(msg['file_path'])}: single message")
@@ -201,29 +201,29 @@ def execute_message_group(connection, messages: List[Dict[str, Any]]) -> None:
         else:
             print(f"Failed to send {os.path.basename(msg['file_path'])}, stopping")
             return
-    
+
     # Send immediate/finite messages
     for msg in immediate_messages:
         delay_seconds = msg['delay'] / 1000.0 if msg['delay'] > 0 else 0
         repeat_count = msg['repeat']
-        
+
         print(f"Sending {os.path.basename(msg['file_path'])}: "
               f"delay={msg['delay']}ms, repeat={repeat_count}")
-        
+
         for i in range(repeat_count):
             if i > 0 and delay_seconds > 0:
                 time.sleep(delay_seconds)
-            
+
             if send_file(msg['file_path'], connection):
                 msg['sent_count'] += 1
             else:
                 print(f"Failed to send {os.path.basename(msg['file_path'])}, stopping")
                 return
-    
+
     # Handle request-response messages (repeat < 0)
     for msg in request_response_messages:
         execute_request_response_message(connection, msg)
-    
+
     # Handle continuous messages (repeat=0) with scheduling
     if continuous_messages:
         execute_continuous_schedule(connection, continuous_messages)
@@ -313,31 +313,31 @@ def execute_continuous_schedule(connection, reply_schedule: List[Dict[str, Any]]
 
 def execute_request_response_message(connection, msg: Dict[str, Any]) -> None:
     """Execute a request-response message (repeat < 0)
-    
+
     Sends the message repeatedly, waiting for abs(repeat) client messages
     between each send. This creates a request-response pattern.
     """
     request_count = abs(msg['repeat'])  # Number of client messages to wait for
     delay_seconds = msg['delay'] / 1000.0 if msg['delay'] > 0 else 0
     file_name = os.path.basename(msg['file_path'])
-    
+
     print(f"Starting request-response for {file_name}: "
           f"wait for {request_count} client message(s) between sends, delay={msg['delay']}ms")
-    
+
     # Send the first message immediately (after initial waitCount if any)
     if delay_seconds > 0:
         time.sleep(delay_seconds)
-    
+
     if not send_file(msg['file_path'], connection):
         print(f"Failed to send initial {file_name}, stopping request-response")
         return
-    
+
     msg['sent_count'] = 1
-    
+
     # Continue request-response cycle indefinitely
     while True:
         print(f"Waiting for {request_count} client message(s) before next {file_name}...")
-        
+
         # Wait for the required number of client messages
         received_messages = 0
         for i in range(request_count):
@@ -347,15 +347,15 @@ def execute_request_response_message(connection, msg: Dict[str, Any]) -> None:
                 return
             received_messages += 1
             print(f"  Received client message {received_messages}/{request_count}")
-        
+
         # All required messages received, send the next response
         if delay_seconds > 0:
             time.sleep(delay_seconds)
-        
+
         if not send_file(msg['file_path'], connection):
             print(f"Failed to send {file_name}, stopping request-response")
             return
-        
+
         msg['sent_count'] += 1
         print(f"Sent {file_name} (total sent: {msg['sent_count']})")
 
