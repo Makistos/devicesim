@@ -85,10 +85,40 @@ Messages:
     waitCount: 3
 ```
 
+## New Feature: Negative Repeat Values (Request-Response Mode)
+
+In addition to the waitCount parameter, the simulator now supports **negative repeat values** for request-response communication patterns.
+
+### Negative Repeat Behavior
+```yaml
+Messages:
+  - file name: data\.bin
+    repeat: -2          # Wait for 2 client messages between each send
+    waitCount: 1        # Start after 1st client message
+```
+
+**How it works:**
+1. **Initial Send**: Message is sent after `waitCount` condition is met
+2. **Wait Phase**: Simulator waits for abs(repeat) client messages
+3. **Response Phase**: Message is sent again  
+4. **Repeat**: Steps 2-3 continue indefinitely
+
+### Repeat Parameter Summary
+- **`repeat > 0`**: Send N times then stop
+- **`repeat = 0`**: Send continuously with delay
+- **`repeat < 0`**: Request-response mode (wait for abs(N) client messages between sends)
+
+### Use Cases for Negative Repeat
+- **Interactive Protocols**: Client must acknowledge each message
+- **Flow Control**: Prevent message flooding  
+- **Handshake Patterns**: Synchronized communication
+- **Testing**: Simulate real device acknowledgment requirements
+
 ## Updated Configuration Files
 
 - `config_simple.yaml` - Immediate mode (waitCount: 0)
 - `config_triggered.yaml` - Triggered mode (various waitCount values)
+- `config_request_response.yaml` - Request-response mode (negative repeat values)
 - `config_example.yaml` - Updated to use waitCount format
 - `config_immediate.yaml` - Updated to use waitCount format
 
@@ -96,8 +126,11 @@ Messages:
 
 Run the demos to see the new functionality:
 ```bash
-# Basic functionality test
+# Basic waitCount functionality test
 python3 test_waitcount.py
+
+# Request-response functionality test (negative repeat)
+python3 test_request_response.py
 
 # Comprehensive demonstration
 python3 demo_waitcount.py

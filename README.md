@@ -140,8 +140,38 @@ Messages:                    # List of messages to send
 |-----------|------|-------------|
 | `file name` | String | File pattern (supports regex)<br>Example: `start\.1\.bin` or `graph\..*\.bin` |
 | `delay` | Integer | Delay in milliseconds before sending |
-| `repeat` | Integer | Number of times to repeat<br>`0` = infinite, `1` = once |
+| `repeat` | Integer | Repeat behavior:<br>`> 0` = send N times<br>`0` = infinite repeat<br>`< 0` = request-response mode (wait for abs(N) client messages between sends) |
 | `waitCount` | Integer | *(Optional)* Wait for this many incoming messages before sending<br>`0` = send immediately (default) |
+
+### Repeat Parameter Behavior
+
+The `repeat` parameter controls how messages are sent and supports three distinct modes:
+
+#### Positive Values (`repeat > 0`)
+- **Behavior**: Send the message exactly N times
+- **Timing**: Uses `delay` parameter between sends
+- **Example**: `repeat: 3` sends the message 3 times then stops
+
+#### Zero Value (`repeat: 0`) 
+- **Behavior**: Send the message continuously (infinite loop)
+- **Timing**: Uses `delay` parameter between sends
+- **Example**: `repeat: 0` sends the message forever with specified delay
+- **Note**: Suitable for continuous data streaming
+
+#### Negative Values (`repeat < 0`) - Request-Response Mode
+- **Behavior**: Creates a request-response pattern
+- **Process**: 
+  1. Send message immediately (respecting `waitCount` if specified)
+  2. Wait for abs(repeat) client messages
+  3. Send message again
+  4. Repeat steps 2-3 indefinitely
+- **Example**: `repeat: -2` means wait for 2 client messages between each send
+- **Use Cases**: Interactive protocols, acknowledgment-based communication
+
+#### Combining with waitCount
+- **waitCount + positive repeat**: Wait for trigger, then send N times
+- **waitCount + zero repeat**: Wait for trigger, then send continuously  
+- **waitCount + negative repeat**: Wait for trigger, send once, then enter request-response mode
 
 ### Example Configurations
 
@@ -175,6 +205,19 @@ Messages:
     delay: 50                   # Different timing
     repeat: 0
     waitCount: 5
+```
+
+#### Request-Response Mode
+```yaml
+Messages:
+  - file name: start\.1\.bin    # Send immediately, then wait for 1 client message
+    delay: 0                    # before each subsequent send
+    repeat: -1                  # Request-response: wait for 1 client message
+    waitCount: 0                # Start immediately
+  - file name: start\.2\.bin    # Send after 2nd client message, then wait for
+    delay: 100                  # 2 client messages between each send
+    repeat: -2                  # Request-response: wait for 2 client messages
+    waitCount: 2                # Start after 2nd client message
 ```
 
 ### File Pattern Matching
